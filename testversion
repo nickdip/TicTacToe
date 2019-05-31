@@ -1,0 +1,268 @@
+import os
+import time
+import random
+import py2exe
+
+
+def blanks(n): #this function prints blank spaces
+    for i in range(n):
+        print()
+
+def displayBoard(board): #this function prints the display board
+    print(board[7] + "|" + board[8] + "|" + board[9])
+    print(board[4] + "|" + board[5] + "|" + board[6])
+    print(board[1] + "|" + board[2] + "|" + board[3])
+    blanks(3)
+    return board
+
+def choosePlayer(name, playersTurn):
+    #variable to define whether the players already gone or not
+    if playersTurn:
+        print("It's your turn to start " + name)
+    else:
+        print("It's the computers turn to start ")
+    blanks(1)
+    time.sleep(1)
+
+
+def xoro():
+    #Player chooses to be naughts or crosses
+    playerSymbol = input("Would you like to be naughts or crosses? Type X or O: ")
+    blanks(1)
+    playerSymbol = playerSymbol.upper()
+    while playerSymbol not in 'XO':
+        print("You must choose either an X or O.")
+        playerSymbol = input()
+        playerSymbol = playerSymbol.upper()
+    return playerSymbol
+
+def row(winningLetter):
+    if winningLetter == "X":
+        return "X"
+    if winningLetter  == "O":
+        return "O"
+    
+def checkWin(spaces):
+    if spaces[1] == spaces[2] and spaces[2] == spaces[3] and spaces[1] in "XO":
+        winningRow = row(spaces[1])
+        return winningRow
+    if spaces[1] == spaces[4] and spaces[4] == spaces[ 7] and spaces[1] in "XO":
+        winningRow = row(spaces[1])
+        return winningRow
+    if spaces[1] == spaces[2] and spaces[2] == spaces[3] and spaces[1] in "XO":
+        winningRow = row(spaces[1])
+        return winningRow
+    if spaces[1] == spaces[5] and spaces[5] == spaces[9] and spaces[1] in "XO":
+        winningRow = row(spaces[1])
+        return winningRow
+    if spaces[4] == spaces[5] and spaces[5] == spaces[6] and spaces[4] in "XO":
+        winningRow = row(spaces[4])
+        return winningRow
+    if spaces[7] == spaces[5] and spaces[5] == spaces[3] and spaces[7] in "XO":
+        winningRow = row(spaces[7])
+        return winningRow       
+    if spaces[7] == spaces[8] and spaces[8] == spaces[9] and spaces[7] in "XO":
+        winningRow = row(spaces[7])
+        return winningRow   
+    if spaces[8] == spaces[5] and spaces[5] == spaces[2] and spaces[8] in "XO":
+        winningRow = row(spaces[8])
+        return winningRow   
+    if spaces[9] == spaces[6] and spaces[6] == spaces[3] and spaces[9] in "XO":
+        winningRow = row(spaces[7])
+        return winningRow   
+    if '_' not in spaces[1:10]:
+        return "draw"
+    else:
+        return False
+        
+def wonGame(spaces, playerSymbol, computerSymbol, name):
+    if checkWin(spaces) == "X":
+        if playerSymbol == "X":
+            return name + " wins!"
+        else:
+            return "Computer wins!"
+    if checkWin(spaces) == "O":
+        if playerSymbol == "O":
+            return name + " wins!"
+        else:
+            return "Comptuer wins!"
+    elif checkWin(spaces) == "draw":
+            return "It's a tie!"
+    else:
+        return False
+
+        
+def computerWin(spaces, takenSpaces, playerSymbol, computerSymbol, name):
+    #this function checks if the computer can win on the next go
+    for i in range(10):
+        if i not in takenSpaces:
+        #This loop checks if there is any possibility of a computer win:
+            savedSpaces = spaces[:] #saved the original list of spaces to try different spaces
+            spaces[i] = computerSymbol
+            if checkWin(spaces) == "O":
+                    break
+                    return spaces
+            spaces = savedSpaces
+    return spaces
+
+def blockWin(spaces, takenSpaces, computerSymbol, playerSymbol, name):
+    #this function checks if the user can win on the next go, so the computer can block it
+    for i in range(10):
+        savedSpaces = spaces[:]
+        if i not in takenSpaces:
+                    spaces[i] = playerSymbol
+                    if checkWin(spaces) == playerSymbol:
+                        spaces[i] = computerSymbol
+                        break
+                        return spaces
+                    else:
+                        spaces = savedSpaces
+    return spaces                   
+    
+
+def computerTurn(computerSymbol, playerSymbol, takenSpaces, spaces, name):
+    time.sleep(0.8)
+    print("Computer's turn:")
+    blanks(2)
+    time.sleep(0.4)
+    #computer will: 1. try to win, 2. block player winning, 3. go in a corner, go into center, go elsewhere
+    #4.if user first space is corner, go centre. if user second space is centre, go to opposite corner of the computers first space
+    savedSpaces = spaces[:]
+    spaces = computerWin(spaces, takenSpaces, playerSymbol, computerSymbol, name)
+    spaces = blockWin(spaces, takenSpaces, computerSymbol, playerSymbol, name)
+    if spaces == savedSpaces: #checks to see if compuer made a turn in 'blockwin' function (spaces = savedspaces means the computer did not go)
+        if len(takenSpaces) == 1: #check if user went first
+            if spaces[1] == playerSymbol or spaces[7] == playerSymbol or spaces[9] == playerSymbol or spaces[3] == playerSymbol: #checks if user went to side
+                spaces[5] = computerSymbol
+        if len(takenSpaces) == 2 and spaces[5] == playerSymbol: #checks if computer went first and user has gone centre
+           if spaces[1] == computerSymbol:
+               spaces[9] = computerSymbol
+           if spaces[7] == computerSymbol:
+                spaces[3] = computerSymbol
+           if spaces[9] == computerSymbol:
+                spaces[1] = computerSymbol
+           if spaces[3] == computerSymbol:
+               spaces[7] = computerSymbol
+        if len(takenSpaces) == 3 and spaces[5] == computerSymbol and (spaces[3] == spaces[7] or spaces[1] == spaces[9]): #checks for user in two opposite diagonals and computer in the centre
+            sideMove = random.choice([2,4,6,8])
+            sideMove = int(sideMove)
+            spaces[sideMove] = computerSymbol              
+    if spaces == savedSpaces:
+        for i in range(10):
+            if i not in takenSpaces:
+                if i in [1,3,7,9]:
+                    spaces[i] = computerSymbol
+                    break
+    if spaces == savedSpaces and spaces[5] == '_':
+            spaces[5] = computerSymbol
+    if spaces == savedSpaces:
+        for i in range(10):
+            if i not in takenSpaces:        
+                if i in [2,4,6,8]:
+                    spaces[i] = computerSymbol
+                    break
+    displayBoard(spaces)
+    return spaces
+            
+
+
+
+def playersMove(spaces, takenSpaces, playerSymbol, name, computerSymbol):
+    #This function is for when it's the turn
+    blanks(1)
+    notAnswered = True
+    while notAnswered == True:
+        userChoice = input("Please enter the number of the box you would like to move into: ")
+        try:
+            userChoice = int(userChoice)
+        except ValueError:
+            print("You must choose a number between 1 and 10.")
+        if userChoice in takenSpaces:
+            print("Sorry, that spaces is taken.")
+            userChoice = input("Please enter the number of the box you would like to move into: ")
+        if userChoice in range(10):
+             notAnswered = False
+    for i in range(10):
+        if i == userChoice:
+            spaces[i] = playerSymbol
+    displayBoard(spaces)
+    return spaces
+    
+
+def main():
+    name = input("Please enter your name: ")
+    blanks(2)
+    os.system('CLS')
+    print("Welcome " + name)
+    blanks(2)
+    spaces ='_'*10
+    spaces = list(spaces)
+    possibleMoves = "0123456789"
+    playerSymbol = xoro()
+    if playerSymbol.upper() == "X":
+        computerSymbol = "O"
+    elif playerSymbol.upper() == "O":
+        computerSymbol = "X"
+    takenSpaces = []
+    playersTurn = True
+    displayBoard(spaces)
+    blanks(2)
+    print("Please enter the digit that for the space you would like to choose")
+    print("It is recommended that you use the numbers on the keypad on the right of your keyboard.")
+    blanks(3)
+    displayBoard(possibleMoves)
+    playAgain = True
+    while playAgain == True:
+       if playersTurn == True:
+           playerStarted = True #variable to confirm who started the game
+       else:
+           playerStarted = False
+       choosePlayer(name, playersTurn)
+       for i in range(10): #loops players turns
+            if playersTurn == True:
+                playersTurn = False
+                spaces = playersMove(spaces, takenSpaces, playerSymbol, name, computerSymbol)
+                for i in range(10):
+                    if spaces[i] != '_' and i not in takenSpaces:
+                        takenSpaces = [i] + takenSpaces
+            else:
+                playersTurn = True
+                spaces = computerTurn(computerSymbol, playerSymbol, takenSpaces, spaces, name)
+                for i in range(10):
+                    if spaces[i] != '_' and i not in takenSpaces:
+                        takenSpaces = [i] + takenSpaces
+            if wonGame(spaces, playerSymbol, computerSymbol, name) != False: #check if anyone has won
+                print(wonGame(spaces, playerSymbol, computerSymbol, name))
+                break
+       blanks(2)
+       print("Would you like to play again? Type Y or N.")
+       nextRound = input()
+       nextRound = nextRound.upper()
+       while nextRound not in "YN":
+            print("Please type Y or N")
+            nextRound = input().upper()
+       if nextRound == "Y":
+           spaces =list('_'*10)
+           if playerStarted == True:
+               playersTurn = False
+           else:
+               playersTurn = True
+           takenSpaces = []
+           blanks(2)
+           print("New round:")
+           time.sleep(1.5)
+           blanks(2)
+           displayBoard(spaces)
+       else:
+           playAgain = False
+           break
+            
+        
+        
+    
+            
+             
+        
+        
+
+main()
